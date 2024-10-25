@@ -1,0 +1,29 @@
+services:
+  mongo:
+    image: mongo
+    container_name: mongo-db
+    ports: 
+      - 27017:27017
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=Admin
+      - MONGO_INITDB_ROOT_PASSWORD=Mongo_MDP123456789@
+    volumes:
+      - mongo_db:/data/db
+
+  nifi:
+    image: apache/nifi:1.26.0
+    container_name: Apache_nifi
+    ports: 
+      - 8443:8443
+    environment:
+      - SINGLE_USER_CREDENTIALS_USERNAME=Siri
+      - SINGLE_USER_CREDENTIALS_PASSWORD=Nifi_MDP123456789#
+    depends_on:
+      - mongo
+    volumes:
+      - nifi_home:/opt/nifi/nifi-current
+
+
+volumes: 
+  mongo_db:
+  nifi_home:

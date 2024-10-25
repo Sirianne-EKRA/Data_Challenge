@@ -1,0 +1,32 @@
+
+docker run --name nifi -p 9494:8484 -d -e NIFI_WEB_HTTPS_PORT='8484' -e SINGLE_USER_CREDENTIALS_USERNAME=Siri -e SINGLE_USER_CREDENTIALS_PASSWORD=Nifi_MDP123456789# apache/nifi:1.26.0
+docker run -d --name nifi -p 8443:8443 -e SINGLE_USER_CREDENTIALS_USERNAME=Siri -e SINGLE_USER_CREDENTIALS_PASSWORD=Nifi_MDP123456789# apache/nifi:1.26.0
+
+
+Est ce que chaque jour lorsque je voudrais utiliser nifi je dois taper la même commande oubien ce sera enregistré pour toutes les autres fois ?
+
+db.data354.insertOne({
+    "timestamp":"2023-10-22 06:00:00",
+    "CO":0.0,
+    "T":26.86,
+    "T. int.":372.43332,
+    "NO2":21.301338,
+    "O3":17.228823,
+    "PM10":31.466667,
+    "PM2.5":14.3,
+    "RH":92.57667
+})
+
+
+db.last.insertOne({"_id": "last_timestamp", "timestamp": "2024-10-23 11:00:00"})
+db.try.find().sort({ "timestamp": -1 }).limit(1);
+
+##### Commande pour récupérer le denrier timestamp ajouté dans la collection
+
+db.try.find().sort({ _id: -1 }).limit(1).forEach(doc => print(doc.timestamp))
+db.try.find().sort({ "timestamp": -1 }).limit(1);
+
+db.users.insertMany([
+    { "nom": "Bob", "email": "bob@example.com" },
+    { "nom": "Charlie", "email": "charlie@example.com" }
+])
