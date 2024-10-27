@@ -3,10 +3,10 @@ services:
     image: mongo
     container_name: mongo-db
     ports: 
-      - 27017:27017
+      - 27018:27017
     environment:
       - MONGO_INITDB_ROOT_USERNAME=Admin
-      - MONGO_INITDB_ROOT_PASSWORD=Mongo_MDP123456789@
+      - MONGO_INITDB_ROOT_PASSWORD=Mongo_MDP123456789
     volumes:
       - mongo_db:/data/db
 

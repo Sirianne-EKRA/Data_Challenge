@@ -5,7 +5,7 @@ docker run -d --name nifi -p 8443:8443 -e SINGLE_USER_CREDENTIALS_USERNAME=Siri 
 
 Est ce que chaque jour lorsque je voudrais utiliser nifi je dois taper la même commande oubien ce sera enregistré pour toutes les autres fois ?
 
-db.data354.insertOne({
+db.try.insertOne({
     "timestamp":"2023-10-22 06:00:00",
     "CO":0.0,
     "T":26.86,
@@ -26,7 +26,21 @@ db.try.find().sort({ "timestamp": -1 }).limit(1);
 db.try.find().sort({ _id: -1 }).limit(1).forEach(doc => print(doc.timestamp))
 db.try.find().sort({ "timestamp": -1 }).limit(1);
 
-db.users.insertMany([
-    { "nom": "Bob", "email": "bob@example.com" },
-    { "nom": "Charlie", "email": "charlie@example.com" }
-])
+#### Commande pour se connecter à mongosh
+
+mongosh -u Admin -p Mongo_MDP123456789 --authenticationDatabase admin
+
+
+
+
+
+1- GetMONGO pour récupérer le dernier document inséré dans ma base de données mongo
+2- EvaluateJsonPath pour récupérer le timestamp dans le json et mettre la valeur du timestamp dans un attribut appelé last_timestamp
+3- InvokeHTTP : le document retourné avec getMongo permet d'initialiser la requête GET de l'API donc invokeHTTP retourne les données complètes des 365 jours derniers
+4- EvaluateJsonPath : Le tableau des données json est contenu dans un attribut data dans le json récupéré par l'api donc ce processeur permet de récupérer que le tableau data contenant les données json adéquates
+5- SplitJson pour diviser le tableau des données json en pluieurs flowfiles contenant chacun un json
+6- EvaluateJsonPath qui permet de récupérer le timestamp dans le json et l'enregistrer dans un attribut json_timestamp
+7- UpdateAttribute pour convertir les attribut last_timestamp et json_timestamp en format de date
+8- RouteOnAttribute pour ne conserver que  tous les flowfiles dont l'attribut json_timestamp est plus récent que l'attribut last_timestamp.
+9- JoltTransformJson qui va renommer certains champs dans les json
+10- PutMongo pour insérer les données dans la base de données
