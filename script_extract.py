@@ -4,7 +4,7 @@ from datetime import datetime
 from pymongo import MongoClient
 
 # EXTRACTION DES DONNÉES
-url = "https://airqino-api.magentalab.it/v3/getStationHourlyAvg/283164601"
+url = "https://airqino-api.magentalab.it/v3/getStationHourlyAvg/283181971"
 response = requests.get(url)
 raw_data = response.json()
 
@@ -20,8 +20,8 @@ df['jour'] = df['horodatage'].dt.date  # Extraire uniquement la date pour le reg
 
 # Connexion à MongoDB
 client = MongoClient("mongodb://Admin:Mongo_MDP123456789@localhost:27018/admin?authSource=admin")
-db = client['Air_Quality']
-collection = db['Station1']
+db = client['airquality']
+collection = db['station2']
 
 # Récupérer le dernier document inséré pour obtenir le dernier horodatage
 last_doc = collection.find_one(sort=[("horodatage", -1)])

@@ -33,6 +33,7 @@ services:
     depends_on:
       - mongo
     volumes:
+      - ./mongo.properties:/etc/trino/catalog/mongo.properties
       - trino_catalog:/etc/trino/catalog
 
 

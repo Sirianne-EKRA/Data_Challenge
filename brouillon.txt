@@ -34,6 +34,358 @@ db.Station1.insertOne({
 
 db._schema.insertOne({table: "Station1",  fields: [{ "name": "_id", "type": "varchar", "hidden": false },{ "name": "horodatage", "type": "timestamp", "hidden": false },{ "name": "CO", "type": "double", "hidden": false },{ "name": "T", "type": "double", "hidden": false },{ "name": "T_int", "type": "double", "hidden": false },{ "name": "NO2", "type": "double", "hidden": false },{ "name": "O3", "type": "double", "hidden": false },{ "name": "PM10", "type": "double", "hidden": false },{ "name": "PM25", "type": "double", "hidden": false },{ "name": "RH", "type": "double", "hidden": false },{ "name": "jour", "type": "varchar", "hidden": false }, { "name": "CO_moy", "type": "double", "hidden": false },{ "name": "PM25_moy", "type": "double", "hidden": false }]});
 
+db._schema.insertOne({
+    "table": "Station1",  // Le nom de la collection que vous voulez exposer dans Trino
+    "fields": [
+        { "name": "_id", "type": "varchar", "hidden": false },
+        { "name": "horodatage", "type": "timestamp", "hidden": false },
+        { "name": "CO", "type": "double", "hidden": false },
+        { "name": "T", "type": "double", "hidden": false },
+        { "name": "T_int", "type": "double", "hidden": false },
+        { "name": "NO2", "type": "double", "hidden": false },
+        { "name": "O3", "type": "double", "hidden": false },
+        { "name": "PM10", "type": "double", "hidden": false },
+        { "name": "PM25", "type": "double", "hidden": false },
+        { "name": "RH", "type": "double", "hidden": false },
+        { "name": "jour", "type": "varchar", "hidden": false },
+        { "name": "CO_moy", "type": "double", "hidden": false },
+        { "name": "PM25_moy", "type": "double", "hidden": false }
+    ]
+});
+Explication de la définition
+table : Le nom de la collection MongoDB que vous voulez exposer en tant que table dans Trino.
+fields : La liste des champs, où chaque champ correspond à une colonne dans Trino.
+name : Le nom du champ dans MongoDB.
+type : Le type de données correspondant dans Trino.
+hidden : Indique si le champ doit être masqué dans les requêtes DESCRIBE ou SELECT *.
+Étape 2 : Vérification du schéma
+Après avoir inséré ce document dans _schema, redémarrez Trino avec la commande suivante :
+
+bash
+Copier le code
+docker compose restart trino
+Ensuite, connectez-vous au CLI Trino et exécutez :
+
+sql
+Copier le code
+SHOW TABLES FROM mongo.air_quality;
+Si la table apparaît, essayez une requête :
+
+sql
+Copier le code
+SELECT * FROM mongo.air_quality.Station1 LIMIT 10;
+Étape 3 : Dépannage (si nécessaire)
+Si vous ne voyez toujours pas la table :
+
+Vérifiez que la collection _schema a bien été créée avec la commande :
+javascript
+Copier le code
+db._schema.find().pretty();
+Assurez-vous que Trino est bien connecté à la base de données avec les bonnes informations d’identification et que le conteneur MongoDB est accessible.
+Avec cette configuration, vous devriez être en mesure de voir vos données dans Trino.
+
+
+
+
+
+
+
+Vous avez dit :
+dans la documentation de trino voilà ce qu'ils ont dit du champs _id : ObjectId#
+MongoDB collection has the special field _id. The connector tries to follow the same rules for this special field, so there will be hidden field _id.
+
+CREATE TABLE IF NOT EXISTS orders (
+    orderkey BIGINT,
+    orderstatus VARCHAR,
+    totalprice DOUBLE,
+    orderdate DATE
+);
+
+INSERT INTO orders VALUES(1, 'bad', 50.0, current_date);
+INSERT INTO orders VALUES(2, 'good', 100.0, current_date);
+SELECT _id, * FROM orders;
+                 _id                 | orderkey | orderstatus | totalprice | orderdate
+-------------------------------------+----------+-------------+------------+------------
+ 55 b1 51 63 38 64 d6 43 8c 61 a9 ce |        1 | bad         |       50.0 | 2015-07-23
+ 55 b1 51 67 38 64 d6 43 8c 61 a9 cf |        2 | good        |      100.0 | 2015-07-23
+(2 rows)
+SELECT _id, * FROM orders WHERE _id = ObjectId('55b151633864d6438c61a9ce');
+                 _id                 | orderkey | orderstatus | totalprice | orderdate
+-------------------------------------+----------+-------------+------------+------------
+ 55 b1 51 63 38 64 d6 43 8c 61 a9 ce |        1 | bad         |       50.0 | 2015-07-23
+(1 row)
+You can render the _id field to readable values with a cast to VARCHAR:
+
+SELECT CAST(_id AS VARCHAR), * FROM orders WHERE _id = ObjectId('55b151633864d6438c61a9ce');
+           _id             | orderkey | orderstatus | totalprice | orderdate
+---------------------------+----------+-------------+------------+------------
+ 55b151633864d6438c61a9ce  |        1 | bad         |       50.0 | 2015-07-23
+(1 row)
+ObjectId timestamp functions#
+The first four bytes of each ObjectId represent an embedded timestamp of its creation time. Trino provides a couple of functions to take advantage of this MongoDB feature.
+
+objectid_timestamp(ObjectId) → timestamp#
+Extracts the TIMESTAMP WITH TIME ZONE from a given ObjectId:
+
+SELECT objectid_timestamp(ObjectId('507f191e810c19729de860ea'));
+-- 2012-10-17 20:46:22.000 UTC
+timestamp_objectid(timestamp) → ObjectId#
+Creates an ObjectId from a TIMESTAMP WITH TIME ZONE:
+
+SELECT timestamp_objectid(TIMESTAMP '2021-08-07 17:51:36 +00:00');
+-- 61 0e c8 28 00 00 00 00 00 00 00 00
+In MongoDB, you can filter all the documents created after 2021-08-07 17:51:36 with a query like this:
+
+db.collection.find({"_id": {"$gt": ObjectId("610ec8280000000000000000")}})
+In Trino, the same can be achieved with this query:
+
+SELECT *
+FROM collection
+WHERE _id > timestamp_objectid(TIMESTAMP '2021-08-07 17:51:36 +00:00');                  donc est ce qu'il va falloir que dans la definition du schema on mette _id en hidden true ou ca va ? 
+ChatGPT a dit :
+ChatGPT
+Non, il n’est pas nécessaire de marquer le champ _id comme hidden: true dans la définition du schéma, sauf si vous ne voulez pas l'afficher dans les résultats de vos requêtes.
+
+Le connecteur Trino pour MongoDB gère automatiquement le champ spécial _id en suivant les règles de MongoDB. Même si vous ne l’incluez pas explicitement dans votre schéma, Trino le traitera comme un champ masqué par défaut. Cela signifie qu'il sera accessible dans vos requêtes, mais il ne sera pas automatiquement affiché avec un SELECT *.
+
+Ce que vous pouvez faire :
+Si vous voulez afficher le champ _id dans vos requêtes :
+Il suffit de l’inclure explicitement dans vos requêtes, comme ceci :
+
+sql
+Copier le code
+SELECT _id, * FROM mongo.air_quality.Station1 LIMIT 10;
+Si vous souhaitez le masquer systématiquement :
+Dans ce cas, ajoutez explicitement le champ _id avec l'option "hidden": true dans la définition du schéma.
+
+Exemple de définition de schéma avec _id masqué :
+javascript
+Copier le code
+db._schema.insertOne({
+    "table": "Station1",
+    "fields": [
+        { "name": "_id", "type": "varchar", "hidden": true },  // Champ masqué
+        { "name": "horodatage", "type": "timestamp", "hidden": false },
+        { "name": "CO", "type": "double", "hidden": false },
+        { "name": "T", "type": "double", "hidden": false },
+        { "name": "T_int", "type": "double", "hidden": false },
+        { "name": "NO2", "type": "double", "hidden": false },
+        { "name": "O3", "type": "double", "hidden": false },
+        { "name": "PM10", "type": "double", "hidden": false },
+        { "name": "PM25", "type": "double", "hidden": false },
+        { "name": "RH", "type": "double", "hidden": false },
+        { "name": "jour", "type": "varchar", "hidden": false },
+        { "name": "CO_moy", "type": "double", "hidden": false },
+        { "name": "PM25_moy", "type": "double", "hidden": false }
+    ]
+});
+Conclusion :
+Vous pouvez laisser Trino gérer le champ _id sans le marquer comme hidden. Il sera disponible en cas de besoin et masqué autrement.
+Si vous avez des cas d’utilisation spécifiques où vous voulez masquer ce champ systématiquement, ajoutez "hidden": true dans la définition du schéma.
+
+
+
+
+
+Vous avez dit :
+Okay j'ai une erreur lorsque j'xecue la commande quest ce que ca veut dire : Air_Quality> db._schema.insertOne({"table": "Station1",  "fields": [{ "name": "_id", "type": "varchar", "hidden": false },{ "name": "horodatage", "type": "timestamp", "hidden": false },{ "name": "CO", "type": "double", "hidden": false },{ "name": "T", "type": "double", "hidden": false },{ "name": "T_int", "type": "double", "hidden": false },{ "name": "NO2", "type": "double", "hidden": false },{ "name": "O3", "type": "double", "hidden": false },{ "name": "PM10", "type": "double", "hidden": false },{ "name": "PM25", "type": "double", "hidden": false },{ "name": "RH", "type": "double", "hidden": false },{ "name": "jour", "type": "varchar", "hidden": false }, { "name": "CO_moy", "type": "double", "hidden": false },{ "name": "PM25_moy", "type": "double", "hidden": false }]});
+TypeError: Cannot read properties of undefined (reading 'insertOne')
+Air_Quality>
+ChatGPT a dit :
+ChatGPT
+L'erreur que vous rencontrez, TypeError: Cannot read properties of undefined (reading 'insertOne'), indique probablement que vous essayez d'exécuter la commande d'insertion sur une collection incorrecte ou que l'accès à la collection _schema n’a pas été correctement établi.
+
+Voici quelques raisons possibles et solutions :
+
+1. Vérifiez la collection cible
+La commande suivante tente d’insérer dans une collection nommée _schema, mais si cette collection n’existe pas encore, MongoDB ne pourra pas y insérer de documents correctement.
+
+Assurez-vous que _schema est bien la collection configurée pour les schémas dans Trino.
+Vous pouvez aussi créer cette collection manuellement avec :
+javascript
+Copier le code
+db.createCollection("_schema");
+Ensuite, réessayez l’insertion :
+
+javascript
+Copier le code
+db._schema.insertOne({
+  "table": "Station1",
+  "fields": [
+    { "name": "_id", "type": "varchar", "hidden": false },
+    { "name": "horodatage", "type": "timestamp", "hidden": false },
+    { "name": "CO", "type": "double", "hidden": false },
+    { "name": "T", "type": "double", "hidden": false },
+    { "name": "T_int", "type": "double", "hidden": false },
+    { "name": "NO2", "type": "double", "hidden": false },
+    { "name": "O3", "type": "double", "hidden": false },
+    { "name": "PM10", "type": "double", "hidden": false },
+    { "name": "PM25", "type": "double", "hidden": false },
+    { "name": "RH", "type": "double", "hidden": false },
+    { "name": "jour", "type": "varchar", "hidden": false },
+    { "name": "CO_moy", "type": "double", "hidden": false },
+    { "name": "PM25_moy", "type": "double", "hidden": false }
+  ]
+});
+2. Assurez-vous que vous êtes dans la bonne base de données
+Utilisez la commande suivante pour vérifier que vous travaillez dans la base de données Air_Quality :
+
+javascript
+Copier le code
+use Air_Quality;
+Ensuite, exécutez à nouveau votre commande d'insertion.
+
+3. Assurez-vous que MongoDB Shell est correctement configuré
+Si vous exécutez cette commande dans une interface autre que le MongoDB Shell ou avec une mauvaise version, cela peut poser problème. Essayez de vérifier la version de votre shell avec :
+
+bash
+Copier le code
+mongosh --version
+Si vous utilisez une ancienne version, essayez avec mongosh (le nouveau shell MongoDB).
+
+4. Vérifiez la syntaxe du shell MongoDB
+Si vous utilisez mongosh, assurez-vous que la syntaxe est correcte et que vous ne faites pas d'erreurs de contexte.
+
+5. Si le problème persiste
+Si la collection _schema est configurée correctement et que la commande échoue toujours, assurez-vous que Trino est bien configuré pour rechercher les schémas dans cette collection. Dans le fichier de configuration de Trino, vous devez spécifier :
+
+properties
+Copier le code
+mongodb.schema-collection=_schema
+Cela garantira que Trino utilise cette collection spécifique pour récupérer les schémas des tables.
+
+
+
+
+
+
+Vous avez dit :
+heuuu svp définit le schéma des tables dans mongodb ou dans trino ? Car c'est dans mongodb que je viens d'exécuter la requete
+ChatGPT a dit :
+ChatGPT
+D’accord ! Voici la clarification :
+
+Dans MongoDB, il n'est généralement pas nécessaire de définir de schéma strict comme dans les bases relationnelles. Cependant, dans votre cas, vous semblez vouloir gérer un schéma explicite pour interagir avec MongoDB via Trino.
+Le connecteur MongoDB de Trino permet de lire des collections MongoDB, mais pour que Trino interprète correctement les documents MongoDB en tant que tables, un schéma explicite est parfois requis.
+1. Définir le schéma pour MongoDB avec Trino
+Dans votre cas, la définition du schéma ne doit pas se faire directement dans MongoDB via la collection. MongoDB est sans schéma, mais Trino, lui, a besoin de savoir quel type de données correspond à chaque champ. C'est pourquoi vous devez créer le schéma dans Trino.
+
+2. Configuration du connecteur MongoDB dans Trino
+Si vous voulez que Trino reconnaisse correctement la collection Station1 et ses documents, voici ce que vous devez faire :
+
+Vérifiez la configuration du connecteur MongoDB dans Trino
+Vous devez spécifier dans le fichier de configuration de Trino (par ex. etc/catalog/mongodb.properties) :
+
+properties
+Copier le code
+connector.name=mongodb
+mongodb.connection-url=mongodb://<username>:<password>@<host>:<port>
+mongodb.schema-collection=_schema
+Le paramètre mongodb.schema-collection=_schema indique que Trino lira les schémas de la collection _schema.
+
+3. Créer une collection _schema dans MongoDB
+La collection _schema dans MongoDB servira à stocker les définitions des tables. Voici comment ajouter le schéma :
+
+javascript
+Copier le code
+use Air_Quality;
+
+db._schema.insertOne({
+  "table": "Station1",
+  "fields": [
+    { "name": "_id", "type": "varchar", "hidden": true },
+    { "name": "horodatage", "type": "timestamp", "hidden": false },
+    { "name": "CO", "type": "double", "hidden": false },
+    { "name": "T", "type": "double", "hidden": false },
+    { "name": "T_int", "type": "double", "hidden": false },
+    { "name": "NO2", "type": "double", "hidden": false },
+    { "name": "O3", "type": "double", "hidden": false },
+    { "name": "PM10", "type": "double", "hidden": false },
+    { "name": "PM25", "type": "double", "hidden": false },
+    { "name": "RH", "type": "double", "hidden": false },
+    { "name": "jour", "type": "varchar", "hidden": false },
+    { "name": "CO_moy", "type": "double", "hidden": false },
+    { "name": "PM25_moy", "type": "double", "hidden": false }
+  ]
+});
+4. Expliquer le champ _id et l'option hidden
+_id : Ce champ est toujours présent par défaut dans chaque document MongoDB. Il est utilisé comme identifiant unique. En le mettant "hidden": true, il sera ignoré lors des requêtes dans Trino si vous ne voulez pas l’afficher directement.
+hidden: false signifie que le champ sera visible lorsque vous interrogerez la table depuis Trino.
+5. Vérifier le schéma depuis Trino
+Après avoir défini le schéma dans MongoDB avec la collection _schema, vous pouvez maintenant interroger la table depuis Trino :
+
+sql
+Copier le code
+SELECT * FROM mongodb.Air_Quality.Station1;
+6. Si l’erreur persiste
+Assurez-vous que la collection _schema est bien créée et accessible.
+Vérifiez que Trino est correctement connecté à MongoDB et que la base de données Air_Quality est bien visible.
+Relancez le service Trino après modification de la configuration.
+En résumé, le schéma est défini dans MongoDB pour être utilisé par Trino. Vous insérez la définition du schéma dans la collection _schema de MongoDB pour que Trino puisse comprendre la structure de vos collections MongoDB comme s’il s’agissait de tables relationnelles.
+
+
+
+
+
+
+Vous avez dit :
+mais si vous dites que c'est dasn trino qu'on exécute le schema, normalement trino n'utilise pas les inserOne non ? C'est sensé être des requetes sql normale comme CREATE etc
+ChatGPT a dit :
+ChatGPT
+Oui, vous avez raison ! En effet, dans Trino, la création de schéma ou de table suit une syntaxe SQL standard (comme CREATE TABLE). L’utilisation de insertOne est une commande MongoDB, ce qui n’a pas de sens si vous tentez de définir un schéma directement dans Trino. Clarifions le flux correct entre MongoDB et Trino.
+
+Comment Trino gère les collections MongoDB ?
+Dans Trino, vous ne créez pas directement des tables pour MongoDB. Trino interprète les collections MongoDB comme des tables virtuelles via son connecteur MongoDB. Vous devez simplement configurer le connecteur correctement, et ensuite Trino pourra interroger MongoDB avec des requêtes SQL.
+
+Procédure correcte : Utiliser Trino avec MongoDB
+Configurer le connecteur MongoDB dans Trino
+Ajoutez les détails de connexion à MongoDB dans un fichier comme etc/catalog/mongodb.properties. Par exemple :
+
+properties
+Copier le code
+connector.name=mongodb
+mongodb.connection-url=mongodb://<username>:<password>@<host>:<port>
+mongodb.schema-collection=_schema
+Interroger MongoDB depuis Trino avec SQL
+Une fois que le connecteur est en place, vous n’avez pas besoin de CREATE TABLE directement pour MongoDB. Trino traitera vos collections MongoDB comme des tables.
+
+Par exemple, si vous avez une collection Station1 dans la base de données Air_Quality, vous pouvez exécuter directement une requête SQL comme :
+
+sql
+Copier le code
+SELECT * FROM mongodb.Air_Quality.Station1;
+Pourquoi parler de la collection _schema ?
+Dans certains cas, Trino a besoin de métadonnées explicites sur le schéma des documents MongoDB, surtout lorsque vous avez des champs complexes ou changeants. Ces métadonnées peuvent être ajoutées manuellement dans la collection _schema de MongoDB.
+
+Voici comment ajouter le schéma dans MongoDB (cette étape se fait dans MongoDB, pas Trino) :
+
+Commande MongoDB pour ajouter le schéma :
+javascript
+Copier le code
+use Air_Quality;
+
+db.schemacol.insertOne({
+  "table": "station2",
+  "fields": [
+    { "name": "_id", "type": "varchar", "hidden": true },
+    { "name": "horodatage", "type": "timestamp", "hidden": false },
+    { "name": "CO", "type": "double", "hidden": false },
+    { "name": "T", "type": "double", "hidden": false },
+    { "name": "T_int", "type": "double", "hidden": false },
+    { "name": "NO2", "type": "double", "hidden": false },
+    { "name": "O3", "type": "double", "hidden": false },
+    { "name": "PM10", "type": "double", "hidden": false },
+    { "name": "PM25", "type": "double", "hidden": false },
+    { "name": "RH", "type": "double", "hidden": false },
+    { "name": "jour", "type": "varchar", "hidden": false },
+    { "name": "CO_moy", "type": "double", "hidden": false },
+    { "name": "PM25_moy", "type": "double", "hidden": false }
+  ]
+});
+
+
+
+
 db.last.insertOne({"_id": "last_timestamp", "timestamp": "2024-10-23 11:00:00"})
 db.try.find().sort({ "timestamp": -1 }).limit(1);
 
