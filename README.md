@@ -19,9 +19,13 @@ La tâche à réaliser consiste  à construire un ETL pour :
 
     - docker pull mongo
     - docker pull apache/nifi:1.26.0
-    - docker pull apache/superset
+    - docker pull trinodb/trino
     - docker compose up -d
 
+    Installation Superset
+    - git clone --depth=1  https://github.com/apache/superset.git
+    - docker compose up -d
+    
 ## DESCRIPTION DU TRAVAIL REALISE 
 
 La première partie du pipeline consistant en l'extraction, le traitement et stockage des données chaque heure a été implémenté de deux manières differentes. D'une part à l'aide de l'outil ETL Apache Nifi et d'autre part à l'aide d'un script python. 

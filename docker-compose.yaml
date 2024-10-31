@@ -1,6 +1,6 @@
 services:
   mongo:
-    image: mongo
+    image: mongo:7
     container_name: mongo-db
     ports: 
       - 27018:27017
@@ -23,7 +23,20 @@ services:
     volumes:
       - nifi_home:/opt/nifi/nifi-current
 
+  trino:
+    image: trinodb/trino:463
+    container_name: Trino
+    ports: 
+      - 8082:8080
+    environment:
+      - CATALOG_MANAGEMENT=dynamic
+    depends_on:
+      - mongo
+    volumes:
+      - trino_catalog:/etc/trino/catalog
+
 
 volumes: 
   mongo_db:
   nifi_home:
+  trino_catalog:

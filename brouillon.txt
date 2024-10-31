@@ -5,18 +5,34 @@ docker run -d --name nifi -p 8443:8443 -e SINGLE_USER_CREDENTIALS_USERNAME=Siri 
 
 Est ce que chaque jour lorsque je voudrais utiliser nifi je dois taper la même commande oubien ce sera enregistré pour toutes les autres fois ?
 
-db.try.insertOne({
-    "timestamp":"2023-10-22 06:00:00",
-    "CO":0.0,
-    "T":26.86,
-    "T. int.":372.43332,
-    "NO2":21.301338,
-    "O3":17.228823,
-    "PM10":31.466667,
-    "PM2.5":14.3,
-    "RH":92.57667
+db.Station1.insertOne({
+    timestamp: '2023-10-30 10:00:00',
+    CO: 0,
+    T: 30.833334,
+    T_int: 423.06668,
+    NO2: 18.710806,
+    O3: 32.38979,
+    PM10: 16.633333,
+    PM25: 5.9333334,
+    RH: 74.09334
 })
 
+db.Station1.insertOne({
+    horodatage: '2023-10-30 10:00:00',
+    CO: 0,
+    T: 27.556667,
+    T_int: 378.16666,
+    NO2: 17.57846,
+    O3: 35.047443,
+    PM10: 9.7,
+    PM25: 2.0333333,
+    RH: 88.35333,
+    jour: '2023-11-01',
+    CO_moy: 0,
+    PM25_moy: 2.9052524999999996
+})
+
+db._schema.insertOne({table: "Station1",  fields: [{ "name": "_id", "type": "varchar", "hidden": false },{ "name": "horodatage", "type": "timestamp", "hidden": false },{ "name": "CO", "type": "double", "hidden": false },{ "name": "T", "type": "double", "hidden": false },{ "name": "T_int", "type": "double", "hidden": false },{ "name": "NO2", "type": "double", "hidden": false },{ "name": "O3", "type": "double", "hidden": false },{ "name": "PM10", "type": "double", "hidden": false },{ "name": "PM25", "type": "double", "hidden": false },{ "name": "RH", "type": "double", "hidden": false },{ "name": "jour", "type": "varchar", "hidden": false }, { "name": "CO_moy", "type": "double", "hidden": false },{ "name": "PM25_moy", "type": "double", "hidden": false }]});
 
 db.last.insertOne({"_id": "last_timestamp", "timestamp": "2024-10-23 11:00:00"})
 db.try.find().sort({ "timestamp": -1 }).limit(1);
@@ -30,9 +46,10 @@ db.try.find().sort({ "timestamp": -1 }).limit(1);
 
 mongosh -u Admin -p Mongo_MDP123456789 --authenticationDatabase admin
 
-
-
-
+echo "connector.name=mongodb" > /etc/trino/catalog/mongo.properties
+echo "mongodb.connection-url=mongodb://Admin:Mongo_MDP123456789@mongo:27017/admin?authSource=admin" >> /etc/trino/catalog/mongo.properties
+echo "mongodb.connection-url=mongodb://Admin:Mongo_MDP123456789@mongo:27017/" >> /etc/trino/catalog/mongo.properties
+echo "mongodb.schema-collection=_schema" >> /etc/trino/catalog/mongo.properties
 
 1- GetMONGO pour récupérer le dernier document inséré dans ma base de données mongo
 2- EvaluateJsonPath pour récupérer le timestamp dans le json et mettre la valeur du timestamp dans un attribut appelé last_timestamp
