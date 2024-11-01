@@ -54,6 +54,7 @@ NB: Le premier processeur Nifi de chaque flux est exécuté chaque 60 minutes do
 
 Ci-dessous un aperçu du flux Nifi implémenté:
 
+<img width="893" alt="image" src="https://github.com/user-attachments/assets/1d111a0e-ed38-4626-ba6b-82b92d46496c">
 
 
 
@@ -84,8 +85,9 @@ Dans Superset, trois principaux types de visualisations ont été configurés po
 - Comparaison des évolutions de CO et PM2.5 dans le temps
 - Évolution temporelle des autres polluants (CO, NO2, O3, PM10, PM2.5)
 
-Aperçu du dashboard ci-dessous:
+Aperçu du dashboard réalisé ci-dessous:
 
+![Capture d’écran 2024-11-01 170627](https://github.com/user-attachments/assets/6c743c18-de79-4627-becf-da60ad0f0dec)
 
 
 L'export du dashboard se trouve dans le fichier dashboard_Air_Quality_export.zip
