@@ -10,23 +10,18 @@ La tâche à réaliser consiste  à construire un ETL pour :
 - Faire un modèle de mL qui fait du forecasting sur les 2 prochaines heures (Optionnel)
 
 
-
 ## PREREQUIS
 
 1. Installer Docker
-2. Clôner le repository github et se mettre à la racine du projet
-3. Lancer les commandes suivantes pour télécharger les images des outils à utiliser : Apache Nifi, MongoDB et Superset.
-
-    - docker pull mongo
-    - docker pull apache/nifi:1.26.0
-    - docker pull trinodb/trino
-    - docker compose up -d
-
-    Installation Superset
+2. Installer Superset
     - git clone --depth=1  https://github.com/apache/superset.git
     - docker compose up -d
-    
-## DESCRIPTION DU TRAVAIL REALISE 
+
+3. Cloner le repo github actuel et aller à la racine du projet.
+4. Faire « docker compose up -d » pour installer les outils nécessaires à la mise en œuvre de l'ETL.
+
+
+## DESCRIPTION DU TRAVAIL REALISE
 
 La première partie du pipeline consistant en l'extraction, le traitement et stockage des données chaque heure a été implémenté de deux manières differentes. D'une part à l'aide de l'outil ETL Apache Nifi et d'autre part à l'aide d'un script python. 
 
@@ -55,7 +50,11 @@ Ce flux NiFi automatise le processus d’extraction, de traitement, et de charge
     - Fermer la fenêtre.
 6. Faire clic droit dans l'interface et cliquer sur "Start" pour déclencher tous les flux de données.
 
-NB: Les deux premiers processeurs Nifi de chaque flux sont exécutés chaque 60 minutes donc l'ETL est automatisé.
+NB: Le premier processeur Nifi de chaque flux est exécuté chaque 60 minutes donc l'ETL est automatisé.
+
+Ci-dessous un aperçu du flux Nifi implémenté:
+
+
 
 
 #### Option 2: SCRIPT PYTHON
@@ -75,5 +74,18 @@ NB: Pour l'exécution automatique du script, il faut définir un cron sur le sys
 0 * * * * /usr/bin/python3 /chemin/vers/script_extract.py >> /chemin/vers/logs/cron_log.txt 2>&1
 
 
-
 ### VISUALISATION DES DONNEES
+
+La visualisation des données stockées dans MongoDB a été réalisée via Apache Superset, connecté à MongoDB en utilisant Trino comme couche intermédiaire. Trino sert de moteur SQL distribué permettant de requêter les données MongoDB et de les transformer en un format compréhensible pour Superset. Cette configuration permet de facilement créer des graphiques et de mettre en place des visualisations interactives sur les données extraites de l'API AirQino.
+
+Dans Superset, trois principaux types de visualisations ont été configurés pour suivre l’évolution des polluants :
+
+- Moyennes journalières de CO et PM2.5 par station 
+- Comparaison des évolutions de CO et PM2.5 dans le temps
+- Évolution temporelle des autres polluants (CO, NO2, O3, PM10, PM2.5)
+
+Aperçu du dashboard ci-dessous:
+
+
+
+L'export du dashboard se trouve dans le fichier dashboard_Air_Quality_export.zip
